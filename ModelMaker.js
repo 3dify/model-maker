@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var watch = require('watch');
 var events = require('events');
+var childProcess = require('child_process');
 
 var SketchFab = require('sketchfab');
 
@@ -21,10 +22,11 @@ module.exports = function(config){
 	}
 
 	var makeZip = function(dir){
-		var zipFilename  = dir+".zip";
+		var zipFilename  = path.join(process.cwd(),dir+".zip");
 		var options = {
 			cwd : dir
 		};
+
 		var args = [
 			zipFilename,
 			'*.obj',
@@ -32,16 +34,44 @@ module.exports = function(config){
 			'*.jpg'
 		];
 
-		cp.execSync('zip'+args.join(' '),options,zipComplete);
+		data.zipFilename = zipFilename;
+		data.name = "name";
+		data.tags = config.tags || "";
+		var process = childProcess.execSync('zip'+args.join(' '),options,zipComplete.bind(null,data));
+
 
 	}
 
-	var zipComplete = function(){
+	var zipComplete = function(metadata, error, stdout, stderr){
+		if(error){
+			console.error(error);
+			process.exit(1);
+		}
 
+		uploadToSketchfab(metadata);
 	}
 
-	var uploadToSketchfab = function(){
+	var uploadToSketchfab = function(metadata){
+		sketchfab.upload({
+			file: metadata.zipFilename,
+			name: metadata.name,
+			description: "",
+			tags: ""
+		},function(err,result){
+			if(err){
+				console.error(err);
+				process.exit(1);
+			}
+			result.on('success',uploadComplete);
+			result.on('progress',function(p){
+				console.log(p);
+			});
+			result.on('error',function(error){
+				console.error(error);
+				process.exit(1);
+			});
 
+		});
 	}
 
 	var uploadComplete(error, url){

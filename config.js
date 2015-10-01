@@ -1,3 +1,4 @@
 module.exports = {
-	privateConfig : './.config'
+	privateConfig : './.config',
+	tags : "sometag anothertag"
 };
