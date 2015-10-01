@@ -16,13 +16,15 @@ module.exports = function(config){
 
 	var process = exports.process = function(dir){
 		//find files
+		dir = resolveDirectory(dir);
 
-		//upload to sketchFab return url
-
+		makeZip(dir);
+		eventEmitter.on('zipComplete',uploadToSketchfab);
+		
 	}
 
 	var makeZip = function(dir){
-		var zipFilename  = path.join(process.cwd(),dir+".zip");
+		var zipFilename  = path.join(dir,"sketchfab.zip");
 		var options = {
 			cwd : dir
 		};
@@ -48,7 +50,7 @@ module.exports = function(config){
 			process.exit(1);
 		}
 
-		uploadToSketchfab(metadata);
+		eventEmitter.emit('zipComplete',metadata)
 	}
 
 	var uploadToSketchfab = function(metadata){
@@ -100,6 +102,33 @@ module.exports = function(config){
 		eventEmitter.on('uploadComplete',function(){
 
 		});
+	}
+
+	var resolveDirectory = function(dir){
+
+		var resolvedDir = dir;
+
+		if( !fs.existsSync(resolvedDir) ){
+			exitWithError("path {0} not found".format(dir));			
+		}
+
+		if( path.isAbsolute(dir) ){
+			resolvedDir = dir;
+		}
+		else {
+			resolvedDir = fs.realpathSync(dir);
+		}
+
+		if(!fs.statSync(resolvedDir).isDirectory()){
+			exitWithError("path {0} given was not a directory",format(dir));						
+		}
+
+		if(resolvedDir.charAt(resolvedDir.length-1)=="/"){
+			resolvedDir = resolvedDir.slice(0,-1);
+		}
+
+		return resolvedDir;
+
 	}
 
 	return exports;
