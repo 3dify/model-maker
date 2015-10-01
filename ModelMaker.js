@@ -4,7 +4,7 @@ var watch = require('watch');
 var events = require('events');
 var childProcess = require('child_process');
 
-var SketchFab = require('sketchfab');
+var SketchFab = require('node-sketchfab');
 
 module.exports = function(config){
 
@@ -14,13 +14,13 @@ module.exports = function(config){
 
 	var sketchfab = new SketchFab(config.sketchfabCredencials);
 
-	var process = exports.process = function(dir){
+	var processDir = exports.process = function(dir){
 		//find files
 		dir = resolveDirectory(dir);
 
 		makeZip(dir);
-		eventEmitter.on('zipComplete',uploadToSketchfab);
-		
+		eventEmitter.once('zipComplete',uploadToSketchfab);
+
 	}
 
 	var makeZip = function(dir){
@@ -36,10 +36,11 @@ module.exports = function(config){
 			'*.jpg'
 		];
 
-		data.zipFilename = zipFilename;
-		data.name = "name";
-		data.tags = config.tags || "";
-		var process = childProcess.execSync('zip'+args.join(' '),options,zipComplete.bind(null,data));
+		var metadata = {};
+		metadata.zipFilename = zipFilename;
+		metadata.name = "name";
+		metadata.tags = config.tags || "";
+		var process = childProcess.exec('zip '+args.join(' '),options,zipComplete.bind(null,metadata));
 
 
 	}
@@ -50,6 +51,8 @@ module.exports = function(config){
 			process.exit(1);
 		}
 
+		console.log("Creating zip");
+		console.log(stdout);
 		eventEmitter.emit('zipComplete',metadata)
 	}
 
@@ -66,7 +69,7 @@ module.exports = function(config){
 			}
 			result.on('success',uploadComplete);
 			result.on('progress',function(p){
-				console.log(p);
+				console.log("Uploading to Sketchfab {0}% Complete".format(Math.round(p)));
 			});
 			result.on('error',function(error){
 				console.error(error);
@@ -76,16 +79,12 @@ module.exports = function(config){
 		});
 	}
 
-	var uploadComplete(error, url){
-
-		if(error){
-			console.error(error);
-			process.exit(1);
-		}
+	var uploadComplete = function(url){
 
 		//distpatch upload complete event
 		eventEmitter.emit('uploadComplete',url);
 
+		console.log("url created: {0}".format(url));
 	}
 
 	var watch = exports.watch = function(dir){
