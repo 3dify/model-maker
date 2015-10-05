@@ -34,6 +34,9 @@ if( args._.length == 0 && args.w ){
 else if( args._.length == 1 ){
 	console.log('process directory');
 	var modelMaker = ModelMaker(config);
+	modelMaker.on("fileFail",function(e){
+		exitWithError("File processing failure \n{0}".format(e.toString()));
+	});
 	modelMaker.process(args._[0]);
 }
 else {

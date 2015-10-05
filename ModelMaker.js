@@ -1,8 +1,10 @@
 var fs = require('fs');
 var path = require('path');
-var watch = require('watch');
 var events = require('events');
 var childProcess = require('child_process');
+
+var watch = require('watch');
+var glob = require("glob");
 
 var SketchFab = require('node-sketchfab');
 
@@ -18,28 +20,93 @@ module.exports = function(config){
 		//find files
 		dir = resolveDirectory(dir);
 
-		makeZip(dir);
+		checkFiles(dir);
+		eventEmitter.once('allFilesFound',getMetadata);
+		eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
 		eventEmitter.once('zipComplete',uploadToSketchfab);
+		eventEmitter.once("uploadComplete",writeLogFile);
 
 	}
 
-	var makeZip = function(dir){
+	var cancelProcessDir = function(){
+		eventEmitter.removeAllListeners('allFilesFound');
+		eventEmitter.removeAllListeners('gotMetadata');
+		eventEmitter.removeAllListeners('zipComplete');
+	}
+
+	var watchDir = exports.watch = function(dir){
+		dir = resolveDirectory(dir);
+		watch.watchTree(dir, function(f, curr, prev){
+			if( curr && prev === null ){
+				console.log(f);
+				var dir = path.dirname(f);
+
+			}
+		});
+	}
+
+	var checkFiles = function(dir){
+		
+		hasFiles(dir,["*.obj","*.jpg","*.mtl","*.json"]).then(function(results){
+			console.log( results );
+			eventEmitter.emit("allFilesFound",dir,results);
+		},function(reason){
+			console.log( "failed" );
+			console.log(reason+" not found");
+		}).catch(function(err){
+			console.log(err.stack);
+			//console.trace();
+			//throw err;
+		});
+	}
+
+	var hasFiles = function(dir,files){
+		files = files.map(function(file){ return path.join(dir,file); })
+		var globs = files.map(function(file){  
+
+			return new Promise( function(resolve,reject){
+				glob(file, function(err, files){
+					if(err) throw err;
+					else if( files.length==0 ) reject(file);
+					else resolve(files[0]);
+				});
+			});
+		});
+		return Promise.all(globs);
+	}
+
+	var getMetadata = function(dir,files){
+		fs.readFile(files[3],'utf8',function(err, data){
+			if(err){
+				cancelProcessDir();
+				eventEmitter.emit('fileFail',err);
+			}
+			try{
+				var metadata = JSON.parse(data);
+			}
+			catch(e){
+				eventEmitter.emit('fileFail',e);				
+			}
+
+			metadata.srcpath = dir;
+			eventEmitter.emit("gotMetadata", files, metadata);
+		});
+	}
+
+	var makeZip = function(dir,files,metadata){
+
 		var zipFilename  = path.join(dir,"sketchfab.zip");
 		var options = {
 			cwd : dir
 		};
 
-		var args = [
-			zipFilename,
-			'*.obj',
-			'*.mtl',
-			'*.jpg'
-		];
+		var args = files.concat();
 
-		var metadata = {};
+		args.pop();
+		args.unshift(zipFilename);
+
 		metadata.zipFilename = zipFilename;
-		metadata.name = "name";
-		metadata.tags = config.tags || "";
+		
 		var process = childProcess.exec('zip '+args.join(' '),options,zipComplete.bind(null,metadata));
 
 
@@ -53,21 +120,23 @@ module.exports = function(config){
 
 		console.log("Creating zip");
 		console.log(stdout);
-		eventEmitter.emit('zipComplete',metadata)
+		eventEmitter.emit('zipComplete',metadata);
+
 	}
 
 	var uploadToSketchfab = function(metadata){
+		
 		sketchfab.upload({
 			file: metadata.zipFilename,
-			name: metadata.name,
-			description: "",
-			tags: ""
+			name: metadata["scan name"] || "",
+			description: metadata["description"] || "",
+			tags: config.tags || ""
 		},function(err,result){
 			if(err){
 				console.error(err);
 				process.exit(1);
 			}
-			result.on('success',uploadComplete);
+			result.on('success',uploadComplete.bind(null,metadata));
 			result.on('progress',function(p){
 				console.log("Uploading to Sketchfab {0}% Complete".format(Math.round(p)));
 			});
@@ -79,15 +148,51 @@ module.exports = function(config){
 		});
 	}
 
-	var uploadComplete = function(url){
+	var uploadComplete = function(metadata,url){
 
+		metadata.url = url;
 		//distpatch upload complete event
-		eventEmitter.emit('uploadComplete',url);
+		eventEmitter.emit('uploadComplete',metadata);
 
 		console.log("url created: {0}".format(url));
 	}
 
-	var watch = exports.watch = function(dir){
+	var writeLogFile = function(metadata){
+		metadata["dirname"] = path.basename( metadata["srcpath"] );
+		metadata["description"] = encodeURIComponent( metadata["description"] );
+
+		var fields = config.fields;
+
+		var entries = fields.map(function(key){ 
+			return metadata[key] || "missing";
+		});
+
+		if( console.log ) fs.stat(config.log,function(err,stats){
+
+			if(stats.isDirectory()){
+				eventEmitter("fileFail",new Error("config.log file {0} was a directroy".format(config.log)));
+				return;
+			}
+
+			var entry = entries.join(",")+"\r\n";
+			/* If the file doesn't exist, add field header to begining of new file */
+			if(err){
+				entry = fields.join(",")+"\r\n"+entry;
+			}
+			fs.appendFile(config.log, entry);
+
+		});
+
+		/*[
+			metadata["dirname"],
+			metadata["dirname"] || "missing",
+			metadata["scan name"] || "missing",
+			metadata["description"] || "missing",
+			metadata["email"] || "missing",
+			metadata["phone"] || "missing",
+			metadata["twitter"] || "missing",
+			metadata["url"]
+		];*/
 
 	}
 
@@ -101,6 +206,10 @@ module.exports = function(config){
 		eventEmitter.on('uploadComplete',function(){
 
 		});
+	}
+
+	exports.on = function(event,callback){
+		eventEmitter.on(event,callback);
 	}
 
 	var resolveDirectory = function(dir){
