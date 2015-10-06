@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var events = require('events');
 var childProcess = require('child_process');
+var net = require('net');
 
 var watch = require('watch');
 var glob = require("glob");
@@ -23,9 +24,9 @@ module.exports = function(config){
 		checkFiles(dir);
 		eventEmitter.once('allFilesFound',getMetadata);
 		eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
-		eventEmitter.once('zipComplete',uploadToSketchfab);
-		eventEmitter.once("uploadComplete",writeLogFile);
-
+		eventEmitter.once("gotMetadata",showInViewer);
+		//eventEmitter.once('zipComplete',uploadToSketchfab);
+		//eventEmitter.once("uploadComplete",writeLogFile);
 	}
 
 	var cancelProcessDir = function(){
@@ -90,6 +91,20 @@ module.exports = function(config){
 
 			metadata.srcpath = dir;
 			eventEmitter.emit("gotMetadata", files, metadata);
+		});
+	}
+
+	var showInViewer = function(files,metadata){
+		var client = net.connect({port: 8001}, function() {
+			console.log('connected to server!');
+			client.write("{0},{1}\n".format(files[0],files[1]));
+			client.on('data', function(data) {
+				console.log(data.toString());
+				client.end();
+			});
+		});
+		client.on('error',function(e){ 
+			console.log("Warning: Could not connect to viewer".yellow);
 		});
 	}
 
@@ -217,7 +232,7 @@ module.exports = function(config){
 		var resolvedDir = dir;
 
 		if( !fs.existsSync(resolvedDir) ){
-			exitWithError("path {0} not found".format(dir));			
+			eventEmitter.emit("fileFail","path {0} not found".format(dir));			
 		}
 
 		if( path.isAbsolute(dir) ){
@@ -228,7 +243,7 @@ module.exports = function(config){
 		}
 
 		if(!fs.statSync(resolvedDir).isDirectory()){
-			exitWithError("path {0} given was not a directory",format(dir));						
+			eventEmitter.emit("fileFail","path {0} given was not a directory",format(dir));						
 		}
 
 		if(resolvedDir.charAt(resolvedDir.length-1)=="/"){
