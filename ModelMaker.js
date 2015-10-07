@@ -17,9 +17,19 @@ module.exports = function(config){
 
 	var sketchfab = new SketchFab(config.sketchfabCredencials);
 
+	var processing = [];
+
 	var processDir = exports.process = function(dir){
 		//find files
 		dir = resolveDirectory(dir);
+
+		if( processing.indexOf(dir) >= 0 ){
+			return;
+		}
+
+		console.log('process directory {0}'.format(dir.blue));
+
+		processing.push(dir);
 
 		checkFiles(dir);
 		eventEmitter.once('allFilesFound',getMetadata);
@@ -39,9 +49,13 @@ module.exports = function(config){
 		dir = resolveDirectory(dir);
 		watch.watchTree(dir, function(f, curr, prev){
 			if( curr && prev === null ){
-				console.log(f);
-				var dir = path.dirname(f);
-
+				var ldir = path.dirname(f);
+				if(ldir!=dir){
+					processDir(ldir);
+				}
+				else {
+					processDir(f);
+				}
 			}
 		});
 	}
@@ -229,7 +243,7 @@ module.exports = function(config){
 
 	var resolveDirectory = function(dir){
 
-		var resolvedDir = dir;
+		var resolvedDir = path.normalize(dir);
 
 		if( !fs.existsSync(resolvedDir) ){
 			eventEmitter.emit("fileFail","path {0} not found".format(dir));			
