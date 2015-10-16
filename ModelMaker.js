@@ -18,10 +18,19 @@ module.exports = function(config){
 	var sketchfab = new SketchFab(config.sketchfabCredencials);
 
 	var processing = [];
+	var processed = [];
+
+	var basePath = null;
+	var logFilePath;
 
 	var processDir = exports.process = function(dir){
 		//find files
+
 		dir = resolveDirectory(dir);
+
+		if( !basePath ){
+			setBasePath( path.dirname(dir) );
+		}
 
 		if( processing.indexOf(dir) >= 0 ){
 			return;
@@ -35,12 +44,17 @@ module.exports = function(config){
 		eventEmitter.once('allFilesFound',getMetadata);
 		eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
 		eventEmitter.once("gotMetadata",showInViewer);
-		//eventEmitter.once('zipComplete',uploadToSketchfab);
-		//eventEmitter.once("uploadComplete",writeLogFile);
+		if( config.uploadToSketchfab ){
+			eventEmitter.once('zipComplete',uploadToSketchfab);
+			eventEmitter.once("uploadComplete",writeLogFile);			
+		}
 	}
 
 	var watchDir = exports.watch = function(dir){
+		
 		dir = resolveDirectory(dir);
+		setBasePath(dir);
+		loadLogFile();
 		watch.watchTree(dir, function(f, curr, prev){
 			if( curr && prev === null ){
 				var ldir = path.dirname(f);
@@ -141,6 +155,11 @@ module.exports = function(config){
 
 	}
 
+	var setBasePath = function(dir){
+		basePath = path.dirname(dir);
+		logFilePath = path.join(basePath, config.log);
+	}
+
 	var zipComplete = function(metadata, error, stdout, stderr){
 		if(error){
 			console.error(error);
@@ -186,9 +205,27 @@ module.exports = function(config){
 		console.log("url created: {0}".format(url));
 	}
 
+	var loadLogFile = function(){
+		var logEntries = fs.readFileSync(logFilePath);
+		logEntries = logEntries.toString().split('\n');
+		
+		processed = processed.concat( logEntries.map(function(logEntry){ 
+			return logEntry.split(',')[0].trim(); 
+		}).filter(function(dirname){
+			return dirname[0]!=='#' && dirname.length>1;
+		}).map(function(dirname){
+			return path.join(basePath,dirname);
+		}));
+
+		console.log(processed);
+		console.log("Exiting processed directories");
+	}
+
 	var writeLogFile = function(metadata){
 		metadata["dirname"] = path.basename( metadata["srcpath"] );
 		metadata["description"] = encodeURIComponent( metadata["description"] );
+
+		processed.push(metadata["srcpath"]);
 
 		var fields = config.fields;
 
@@ -196,7 +233,7 @@ module.exports = function(config){
 			return metadata[key] || "missing";
 		});
 
-		if( console.log ) fs.stat(config.log,function(err,stats){
+		if( console.log ) fs.stat(logFilePath,function(err,stats){
 
 			if(stats.isDirectory()){
 				eventEmitter("fileFail",new Error("config.log file {0} was a directroy".format(config.log)));
@@ -206,9 +243,9 @@ module.exports = function(config){
 			var entry = entries.join(",")+"\r\n";
 			/* If the file doesn't exist, add field header to begining of new file */
 			if(err){
-				entry = fields.join(",")+"\r\n"+entry;
+				entry = "#"+fields.join(",")+"\r\n"+entry;
 			}
-			fs.appendFile(config.log, entry);
+			fs.appendFile(logFilePath, entry);
 
 		});
 

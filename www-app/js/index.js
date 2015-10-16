@@ -1,6 +1,6 @@
 $(function(){
 	var index =$('#index').hide();
-
+	var listings = {};
 
 	var processListing = function(){
 
@@ -10,27 +10,66 @@ $(function(){
 		index.slideDown();
 	}
 
+	var showForm = function(dir){
+		var fields = [
+			'dir',
+			'name',
+			'scan-name',
+			'description',
+			'email',
+			'phone',
+			'twitter'
+		];
+		var entry = listings[dir];
+		console.log(entry);
+		fields.forEach(function(field){
+			$('#personalinfo *[name='+field+']').val( entry[field] || "" );
+		});
+		index.slideUp();
+	}
+
 	var getListing = function(){
 		var request = $.ajax('/list');
-		request.done(function(data,status){
-			console.log(data);
-			
-			index.empty();
-			Object.keys(data).forEach(function(k){
-				data[k]['dir'] = k;
-				index.append(makeLine(data[k]));
-			});
-		});
+		request.done(onListingResponse);
 		request.fail(function(){
+		});
+	}
 
+	var onListingResponse = function(data,status){
+		//console.log(data);
+		var keys = Object.keys(data);
+		if( keys.length === Object.keys(listings).length ){
+			return;
+		}
+		listings = {};
+		var listingContainer = $('#index .container');
+		listingContainer.empty();
+		keys.forEach(function(k){
+			data[k]['dir'] = k;
+
+			listingContainer.append(makeListingEntry(data[k]));
+			listings[k] = data[k];
+		});
+		$('#index .container button').click(function(button){
+			var dir = $(this).attr('data-dir');
+			showForm(dir);
 		});
 	}
 
 	var makeListingEntry = function(entry){
 		var o = [];
 		o.push('<span class="dir">'+entry.dir+'</span>');
-		o.push('<span class="edit"><button>Edit</button</span>');
-		return '<div class="index-entry">'+o.join('')+'</div>';
+		o.push('<span class="scan-name">'+(entry['scan-name']||"incomplete")+'</span>')
+		o.push('<span class="edit"><button data-dir="'+entry.dir+'"">Edit</button</span>');
+		return '<div class="index-entry" data-dir="'+entry.dir+'">'+o.join('')+'</div>';
+	}
+
+	var updateListingEntry = function(entry){
+		if( !entry.dir ) return;
+		var element = $('#index .index-entry[data-dir='+entry.dir+']');
+		Object.keys(entry).forEach(function(key){
+			$('.'+key,element).html(entry[key]);
+		});
 	}
 
 	var onFormChange = function(){
@@ -46,7 +85,8 @@ $(function(){
 		saveButton.attr('disabled','');
 		var data = {};
 		console.log($("#personalinfo").serializeArray());
-		$("form").serializeArray().map(function(x){data[x.name] = x.value;});
+		$("form").serializeArray().forEach(function(x){data[x.name] = x.value;});
+		listings[data['dir']] = data;
 		console.log(data);
 		$.ajax("/",{
 			method:"POST",
@@ -55,6 +95,8 @@ $(function(){
 			dataType:'json',
 			success: function(){
 				saveButton.attr('disabled',false);
+				updateListingEntry(data);
+				showListing();
 
 			},
 			error: function(e){
@@ -64,18 +106,15 @@ $(function(){
 	};
 
 	$('html').keyup(function(e){
-		if( e.keyCode == 27 ){
+		if( e.keyCode === 40 ){
 			showListing();
 		}
 		/*
-		console.log(e);
-		if( e.keyCode === 40 ){
-			index.slideUp();
-		}
 		if( e.keyCode == 38 ){
-			index.slideDown();
+			hideListing();
 		}
 		*/
+		
 	});
 
 	var activateFullscreen = function(){
@@ -92,8 +131,13 @@ $(function(){
 	$('form#personalinfo').on('submit',onFormSubmit);
 	$('#savebutton').on('click',onSaveClicked)
 	$('input').attr('autofill', 'off');
+	/*
 	$(document.documentElement).click(function(){
 		console.log('click!');
 		activateFullscreen();
-	})
+	});
+	*/
+
+	getListing();
+	setInterval(getListing,5000);
 });
