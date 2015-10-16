@@ -8,6 +8,7 @@ var args = require('yargs').argv;
 require('stringformat').extendString();
 
 var config = require('./config');
+var ModelMetadata = require('./ModelMetadata');
 var ModelMaker = require('./ModelMaker');
 
 var exitWithError = function(msg,status){
@@ -28,7 +29,9 @@ if( args._.length == 0 && args.w ){
 	console.log('watch directory');
 
 	var modelMaker = ModelMaker(config);
+	var modelMetadata = ModelMetadata(config);
 
+	modelMetadata.watch(args.w);
 	modelMaker.watch(args.w);
 }
 else if( args._.length == 1 ){

@@ -39,12 +39,6 @@ module.exports = function(config){
 		//eventEmitter.once("uploadComplete",writeLogFile);
 	}
 
-	var cancelProcessDir = function(){
-		eventEmitter.removeAllListeners('allFilesFound');
-		eventEmitter.removeAllListeners('gotMetadata');
-		eventEmitter.removeAllListeners('zipComplete');
-	}
-
 	var watchDir = exports.watch = function(dir){
 		dir = resolveDirectory(dir);
 		watch.watchTree(dir, function(f, curr, prev){
@@ -58,6 +52,12 @@ module.exports = function(config){
 				}
 			}
 		});
+	}
+
+	var cancelProcessDir = function(){
+		eventEmitter.removeAllListeners('allFilesFound');
+		eventEmitter.removeAllListeners('gotMetadata');
+		eventEmitter.removeAllListeners('zipComplete');
 	}
 
 	var checkFiles = function(dir){

@@ -1,0 +1,160 @@
+var express = require('express');
+var bodyParser = require('body-parser');
+var fs = require('fs');
+var events = require('events');
+var path = require('path');
+
+var watch = require('watch');
+var glob = require("glob");
+
+
+module.exports = function(config){
+	var exports = {};
+	var eventEmitter = new events.EventEmitter();
+	var app = express();
+	app.use(bodyParser.json());
+	app.use(express.static(config.webroot));
+	var currentWatchDir;
+	var dir = [];
+	var metadata = {};
+
+	var watchDir = exports.watch = function(dir){
+		currentWatchDir = dir = resolveDirectory(dir);
+
+		scanDir(dir).then(function(){
+			console.log("Watching for new dirs");
+			watch.watchTree(dir, function(f, curr, prev){
+				console.log('change to {0}'.format(f));
+				if( curr && prev === null ){
+					var ldir = path.dirname(f);
+					if(ldir==dir){
+						checkDir(f);
+					}
+				}
+			});
+		});
+	}
+
+	var scanDir = exports.scanDir = function(scanPath){
+		return new Promise(function(res,rej){
+			scanPath = resolveDirectory(scanPath);
+			getDirectories(scanPath,function(subdirs){
+				console.log(subdirs);
+				Promise.all( subdirs.map(function(dir){
+					return addModelDir(path.join(scanPath,dir));
+				}) ).then(res);
+			});			
+		});
+	}
+
+	var addModelDir = exports.addModelDir = function(dirPath){
+		console.log("addModelDir "+dirPath);
+		return new Promise(function(res,rej){
+			dirPath = resolveDirectory(dirPath);
+			var dirName = path.basename(dirPath)
+			dir.push(dirName);
+			dir.sort().reverse();
+			
+			getMetafile(dirPath).then(function(file){
+				metadata[dirName] = ( file instanceof Error ) ? null : file.toString();
+				res();
+			},function(err){ 
+				res(); });			
+		});
+
+	}
+
+	var checkDir = function(possibleNewDir){
+		fs.stat(possibleNewDir,function(err,stats){
+			if(stats.isDirectory() && dir.indexOf(path.basename(possibleNewDir))==-1){
+				addModelDir(possibleNewDir);
+			}
+		});
+	}
+
+
+	var getDirectories = function(srcpath,onComplete) {
+		return fs.readdir(srcpath,function(err,entries){ 
+			if(err) throw err;
+			onComplete(entries.filter(function(file) {
+				return fs.statSync(path.join(srcpath, file)).isDirectory();
+			}));
+		});
+	}
+
+	var getMetafile = function(dir){
+
+		var filePath = path.join(dir,config.metadata);
+		return new Promise(function(res,rej){
+
+			fs.readFile( filePath,'utf8', function(err){
+				if(err){
+					rej(err);
+					return;
+				}
+				try {
+					data = JSON.parse(data);
+					res(data);
+				}
+				catch(e){
+					rej(new Error("Error parsing Json file: {0}".format(filePath)));
+				}
+				
+				
+			})
+		});
+	}
+
+	var resolveDirectory = function(dir){
+
+		var resolvedDir = path.normalize(dir);
+
+		if( !fs.existsSync(resolvedDir) ){
+			eventEmitter.emit("fileFail","path {0} not found".format(dir));			
+		}
+
+		if( path.isAbsolute(dir) ){
+			resolvedDir = dir;
+		}
+		else {
+			resolvedDir = fs.realpathSync(dir);
+		}
+
+		if(!fs.statSync(resolvedDir).isDirectory()){
+			eventEmitter.emit("fileFail","path {0} given was not a directory",format(dir));						
+		}
+
+		if(resolvedDir.charAt(resolvedDir.length-1)=="/"){
+			resolvedDir = resolvedDir.slice(0,-1);
+		}
+
+		return resolvedDir;
+
+	}
+
+	/*
+	app.get('/',function(req,res){
+		res.sendFile(config.formTemplate);
+	});
+	*/
+
+	app.post('/',function(req,res){
+		var formData = req.body;
+		console.log(formData);
+		res.json({'status':'OK'});
+	});
+
+	app.get('/list',function(req,res){
+		var data = {};
+		dir.forEach(function(key){
+			data[key] = metadata[key] || {};
+		});
+		res.json(data);
+	});
+
+	app.listen(config.port, function(){
+  		console.log('Express server listening on port ' + config.port);
+	});
+	return exports;
+
+};
