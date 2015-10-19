@@ -1,5 +1,5 @@
 $(function(){
-	var index =$('#index').hide();
+	var index =$('#index');
 	var listings = {};
 
 	var processListing = function(){

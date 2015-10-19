@@ -31,6 +31,13 @@ module.exports = function(config){
 						checkDir(f);
 					}
 				}
+				if( prev && curr && curr.dev===0 ){
+					var ldir = path.dirname(f);
+					if(ldir==dir){
+						deletedDir(f);
+					}
+				}
+				
 			});
 		});
 	}
@@ -43,7 +50,7 @@ module.exports = function(config){
 				Promise.all( subdirs.map(function(dir){
 					return addModelDir(path.join(scanPath,dir));
 				}) ).then(res);
-			});			
+			});
 		});
 	}
 
@@ -64,10 +71,24 @@ module.exports = function(config){
 
 	}
 
+	var removeModelDir = function(dirPath){
+		var dirName = path.basename(dirPath)
+		dir.splice( dir.indexOf(dirName), 1 );
+		delete metadata[dirName]
+	}
+
 	var checkDir = function(possibleNewDir){
 		fs.stat(possibleNewDir,function(err,stats){
-			if(stats.isDirectory() && dir.indexOf(path.basename(possibleNewDir))==-1){
+			if( stats.isDirectory() && dir.indexOf(path.basename(possibleNewDir))===-1){
 				addModelDir(possibleNewDir);
+			}
+		});
+	}
+
+	var deletedDir = function(removedDir){
+		fs.stat(removedDir,function(err,stats){
+			if( err && dir.indexOf(path.basename(removedDir))!==-1){
+				removeModelDir(removedDir);
 			}
 		});
 	}
