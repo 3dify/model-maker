@@ -10,7 +10,7 @@ module.exports = {
 	fields : [
 			"dirname",
 			"name",
-			"scan name",
+			"scan-name",
 			"description",
 			"email",
 			"phone",

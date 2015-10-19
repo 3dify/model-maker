@@ -62,11 +62,15 @@ module.exports = function(config){
 			dir.push(dirName);
 			dir.sort().reverse();
 			
-			getMetafile(dirPath).then(function(file){
-				metadata[dirName] = ( file instanceof Error ) ? null : file.toString();
+			getMetafile(dirPath).then(function(data){
+				metadata[dirName] = data;
 				res();
 			},function(err){ 
-				res(); });			
+				console.error(err);
+				res(); 
+			}).catch(function(err){
+				console.error(err)
+			});;
 		});
 
 	}
@@ -108,21 +112,41 @@ module.exports = function(config){
 		var filePath = path.join(dir,config.metadata);
 		return new Promise(function(res,rej){
 
-			fs.readFile( filePath,'utf8', function(err){
+			fs.readFile( filePath,'utf8', function(err,data){
 				if(err){
 					rej(err);
 					return;
 				}
 				try {
-					data = JSON.parse(data);
+					data = JSON.parse(data.toString());
 					res(data);
 				}
 				catch(e){
-					rej(new Error("Error parsing Json file: {0}".format(filePath)));
+					rej(new Error("Error parsing Json file: {0}\n{1}".format(filePath,e)));
 				}
 				
 				
 			})
+		});
+	}
+
+	var saveMetadata = function(data){
+
+		if( !data.dir.trim() ){
+			console.error("No dir in metadata entry".red);
+			return;
+		}
+
+		var dir = path.join(currentWatchDir,data.dir);
+		metadata[data.dir] = data;
+		fs.stat(dir,function(err,stat){
+			if( err || !stat.isDirectory() ){
+				console.error("Could not save metadata dir not found: {0}".format(dir).red);
+			}
+			var filePath = path.join(dir,config.metadata);
+			fs.writeFile(filePath,JSON.stringify(data),function(err){
+				console.log("{0} saved".format(filePath));
+			});
 		});
 	}
 
@@ -161,6 +185,7 @@ module.exports = function(config){
 
 	app.post('/',function(req,res){
 		var formData = req.body;
+		saveMetadata(formData);
 		console.log(formData);
 		res.json({'status':'OK'});
 	});
