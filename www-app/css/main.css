@@ -129,8 +129,18 @@ index-entry .dir {
 	font-size: 2em;
 }
 
+.index-entry {
+    font-size: 2em;	
+}
+
+.index-entry .edit-button {
+    font-size: 22px;	
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
 .index-entry .scan-name {
-    font-size: 2em;
     width: 100%;
     display: block;
     position: absolute;

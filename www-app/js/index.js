@@ -60,7 +60,7 @@ $(function(){
 		var o = [];
 		o.push('<span class="dir">'+entry.dir+'</span>');
 		o.push('<span class="scan-name">'+(entry['scan-name']||"incomplete")+'</span>')
-		o.push('<span class="edit"><button data-dir="'+entry.dir+'"">Edit</button</span>');
+		o.push('<span class="edit"><button class="edit-button" data-dir="'+entry.dir+'"">edit</button</span>');
 		return '<div class="index-entry" data-dir="'+entry.dir+'">'+o.join('')+'</div>';
 	}
 
@@ -68,7 +68,7 @@ $(function(){
 		if( !entry.dir ) return;
 		var element = $('#index .index-entry[data-dir='+entry.dir+']');
 		Object.keys(entry).forEach(function(key){
-			$('.'+key,element).html(entry[key]);
+			$('.'+key,element).html(entry[key]||"incomplete");
 		});
 	}
 
