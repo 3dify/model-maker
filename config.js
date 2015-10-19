@@ -5,7 +5,7 @@ module.exports = {
 	metadata : "metadata.json",
 	webroot: 'www-app',
 	port: 8080,
-	uploadToSketchfab : true,
+	uploadToSketchfab : false,
 	formTemplate : "www-app/form-template.html",
 	fields : [
 			"dirname",
