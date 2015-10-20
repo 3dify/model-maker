@@ -31,6 +31,8 @@ if( args._.length == 0 && args.w ){
 	var modelMaker = ModelMaker(config);
 	var modelMetadata = ModelMetadata(config);
 
+	modelMaker.enableEmail();
+
 	modelMetadata.watch(args.w);
 	modelMaker.watch(args.w);
 }

@@ -7,6 +7,8 @@ var net = require('net');
 var watch = require('watch');
 var glob = require("glob");
 
+var EmailNotification = require('EmailNotification');
+
 var SketchFab = require('node-sketchfab');
 
 module.exports = function(config){
@@ -22,6 +24,8 @@ module.exports = function(config){
 
 	var basePath = null;
 	var logFilePath;
+
+	var emailNotification;
 
 	var processDir = exports.process = function(dir){
 		//find files
@@ -47,7 +51,12 @@ module.exports = function(config){
 		if( config.uploadToSketchfab ){
 			eventEmitter.once('zipComplete',uploadToSketchfab);
 			eventEmitter.once("uploadComplete",writeLogFile);			
+			eventEmitter.once("uploadComplete",onComplete);
 		}
+		else {
+			eventEmitter.once('zipComplete',onComplete);
+		}
+
 	}
 
 	var watchDir = exports.watch = function(dir){
@@ -205,6 +214,10 @@ module.exports = function(config){
 		console.log("url created: {0}".format(url));
 	}
 
+	var onComplete = function(){
+		eventEmitter.emit('onComplete',metadata);
+	}
+
 	var loadLogFile = function(){
 		var logEntries = fs.readFileSync(logFilePath);
 		logEntries = logEntries.toString().split('\n');
@@ -263,13 +276,21 @@ module.exports = function(config){
 	}
 
 	exports.enableEmail = function(){
-		eventEmitter.on('uploadComplete',function(){
 
+		emailNotification = new EmailNotification();
+
+		eventEmitter.on('onComplete',function(metadata){
+			console.log('attempting to send email');
+			emailNotification.sendEmail(
+				metadata['email'],
+				'subject heading : {0}'.format(metadata['scan-name']),
+				'email body {0}. {1}'.format(metadata.url,metadata.name)
+			);
 		});
 	}
 
 	exports.enablePrint = function(){
-		eventEmitter.on('uploadComplete',function(){
+		eventEmitter.on('onComplete',function(metadata){
 
 		});
 	}
