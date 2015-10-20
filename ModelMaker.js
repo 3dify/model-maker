@@ -7,7 +7,7 @@ var net = require('net');
 var watch = require('watch');
 var glob = require("glob");
 
-var EmailNotification = require('EmailNotification');
+var EmailNotifications = require('./EmailNotifications');
 
 var SketchFab = require('node-sketchfab');
 
@@ -214,7 +214,7 @@ module.exports = function(config){
 		console.log("url created: {0}".format(url));
 	}
 
-	var onComplete = function(){
+	var onComplete = function(metadata){
 		eventEmitter.emit('onComplete',metadata);
 	}
 
@@ -277,7 +277,7 @@ module.exports = function(config){
 
 	exports.enableEmail = function(){
 
-		emailNotification = new EmailNotification();
+		emailNotification = new EmailNotifications(config);
 
 		eventEmitter.on('onComplete',function(metadata){
 			console.log('attempting to send email');

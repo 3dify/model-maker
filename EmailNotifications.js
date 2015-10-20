@@ -1,3 +1,4 @@
+var nodemailer = require('nodemailer');
 
 module.exports = function(config){
 
@@ -13,7 +14,7 @@ module.exports = function(config){
 
 	exports.sendEmail = function(address,subject,template){
 		var options = {
-			from: config.email.user,
+			from: config.email.from,
 			to: address,
 			subject: subject,
 			text: template
@@ -23,7 +24,9 @@ module.exports = function(config){
 			if(error){
 				console.error(error);
 			}
-			console.log(info.response);
+			if( info ){
+				console.log(info.response);				
+			}
 		});
 	}
 
