@@ -283,8 +283,7 @@ module.exports = function(config){
 			console.log('attempting to send email');
 			emailNotification.sendEmail(
 				metadata['email'],
-				'subject heading : {0}'.format(metadata['scan-name']),
-				'email body {0}. {1}'.format(metadata.url,metadata.name)
+				metadata
 			);
 		});
 	}

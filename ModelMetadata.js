@@ -24,7 +24,7 @@ module.exports = function(config){
 		scanDir(dir).then(function(){
 			console.log("Watching for new dirs");
 			watch.watchTree(dir, function(f, curr, prev){
-				console.log('change to {0}'.format(f));
+				//console.log('change to {0}'.format(f));
 				if( curr && prev === null ){
 					var ldir = path.dirname(f);
 					if(ldir==dir){
