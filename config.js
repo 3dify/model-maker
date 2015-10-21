@@ -5,6 +5,7 @@ module.exports = {
 	metadata : "metadata.json",
 	webroot: 'www-app',
 	port: 8080,
+	viewerHost: "192.168.2.2",
 	uploadToSketchfab : true,
 	formTemplate : "www-app/form-template.html",
 	emailNotificationTemplate : "www-app/email-template.html",

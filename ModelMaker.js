@@ -132,7 +132,7 @@ module.exports = function(config){
 	}
 
 	var showInViewer = function(files,metadata){
-		var client = net.connect({port: 8001}, function() {
+		var client = net.connect({host:config.viewerHost,port: 8001}, function() {
 			console.log('connected to server!');
 			client.write("{0},{1}\n".format(files[0],files[1]));
 			client.on('data', function(data) {
@@ -165,7 +165,7 @@ module.exports = function(config){
 	}
 
 	var setBasePath = function(dir){
-		basePath = path.dirname(dir);
+		basePath = dir;
 		logFilePath = path.join(basePath, config.log);
 	}
 
@@ -219,7 +219,13 @@ module.exports = function(config){
 	}
 
 	var loadLogFile = function(){
-		var logEntries = fs.readFileSync(logFilePath);
+		try {
+			var logEntries = fs.readFileSync(logFilePath);
+		}
+		catch(e){
+			console.log('no existing log file found'.yellow);
+			return;
+		}
 		logEntries = logEntries.toString().split('\n');
 		
 		processed = processed.concat( logEntries.map(function(logEntry){ 
@@ -230,8 +236,8 @@ module.exports = function(config){
 			return path.join(basePath,dirname);
 		}));
 
-		console.log(processed);
-		console.log("Exiting processed directories");
+		console.log("Existing processed directories".green);
+		console.log(processed.join("\n").green);
 	}
 
 	var writeLogFile = function(metadata){

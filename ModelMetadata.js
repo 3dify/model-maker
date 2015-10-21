@@ -46,7 +46,7 @@ module.exports = function(config){
 		return new Promise(function(res,rej){
 			scanPath = resolveDirectory(scanPath);
 			getDirectories(scanPath,function(subdirs){
-				console.log(subdirs);
+				//console.log(">>>"+subdirs);
 				Promise.all( subdirs.map(function(dir){
 					return addModelDir(path.join(scanPath,dir));
 				}) ).then(res);
