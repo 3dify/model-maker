@@ -33,8 +33,8 @@ module.exports = function(config){
 					}
 				}
 				if( prev && curr && curr.dev===0 ){
-					if(ldir[0]===".") return;
 					var ldir = path.dirname(f);
+					if(ldir[0]===".") return;
 					if(ldir==dir){
 						deletedDir(f);
 					}
