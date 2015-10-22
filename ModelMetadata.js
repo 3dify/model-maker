@@ -160,7 +160,7 @@ module.exports = function(config){
 			eventEmitter.emit("fileFail","path {0} not found".format(dir));			
 		}
 
-		if( path.isAbsolute(dir) ){
+		if( path.isAbsolute && path.isAbsolute(dir) ){
 			resolvedDir = dir;
 		}
 		else {
