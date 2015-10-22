@@ -146,7 +146,8 @@ module.exports = function(config){
 			console.log(reason+" not found");
 			processingComplete(dir);
 		}).catch(function(err){
-			console.log(err.stack);
+			console.log("has files failed");
+			throw err;
 			processingComplete(dir);
 			//console.trace();
 			//throw err;
@@ -162,14 +163,17 @@ module.exports = function(config){
 	var hasFiles = function(dir,files,exceptFiles){
 
 		files = files.map(function(file){ return path.join(dir,file); });
-		exceptFiles = exceptFiles.map(function(file){ return path.join(dir,file); });
+		if( exceptFiles ) exceptFiles = exceptFiles.map(function(file){ return path.join(dir,file); });
+		else exceptFiles = [];
+
 		files = files.concat( exceptFiles );
 		var globs = files.map(function(file){  
 
 			return new Promise( function(resolve,reject){
 				glob(file, function(err, files){
-					if(err) throw err;
-					var isExcept = file.indexOf(exceptFiles) >= 0;
+					files = files || [];
+					//if(err) throw err;
+					var isExcept = exceptFiles.indexOf(file) >= 0;
 					var hasFile = files.length!==0;
 					if( !!(hasFile ^ isExcept) ) resolve(files[0]);
 					else reject(file);
@@ -222,10 +226,8 @@ module.exports = function(config){
 
 		args.pop();
 
-		console.log(("files to zip "+args.join(", ")).red);
-
 		args.unshift(zipFilename);
-
+		args.unshift("-j");
 
 		metadata.zipFilename = zipFilename;
 		
@@ -324,9 +326,9 @@ module.exports = function(config){
 			return metadata[key] || "missing";
 		});
 
-		if( console.log ) fs.stat(logFilePath,function(err,stats){
+		if( logFilePath ) fs.stat(logFilePath,function(err,stats){
 
-			if(stats.isDirectory()){
+			if(stats && stats.isDirectory()){
 				eventEmitter("fileFail",new Error("config.log file {0} was a directroy".format(config.log)));
 				return;
 			}
@@ -359,10 +361,11 @@ module.exports = function(config){
 
 		eventEmitter.on('onComplete',function(metadata){
 			console.log('attempting to send email');
-			emailNotification.sendEmail(
+			if( metadata['email'] ) emailNotification.sendEmail(
 				metadata['email'],
 				metadata
 			);
+			else conso0le.log("no email provided".red);
 		});
 	}
 
