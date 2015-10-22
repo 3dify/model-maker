@@ -37,6 +37,10 @@ module.exports = function(config){
 			setBasePath( path.dirname(dir) );
 		}
 
+		if( processed.indexOf(path.dirname(dir)) >= 0 ){
+			return;
+		}
+
 		if( processing.indexOf(dir) >= 0 ){
 			return;
 		}

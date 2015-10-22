@@ -15,10 +15,10 @@
     "express": "^4.13.3",
     "glob": "^5.0.15",
     "im-resize": "^2.3.1",
-    "node-sketchfab": "0.0.3",
     "nodemailer": "^1.8.0",
     "nodemailer-express-handlebars": "^1.0.0",
     "nodemailer-html-to-text": "^1.0.2",
+    "sketchfab": "0.0.4",
     "stringformat": "0.0.5",
     "watch": "^0.16.0",
     "yargs": "^3.26.0"
