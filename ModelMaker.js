@@ -6,9 +6,9 @@ var net = require('net');
 
 var watch = require('watch');
 var glob = require("glob");
+var resize = require('im-resize');
 
 var EmailNotifications = require('./EmailNotifications');
-
 var SketchFab = require('node-sketchfab');
 
 module.exports = function(config){
@@ -28,6 +28,7 @@ module.exports = function(config){
 	var emailNotification;
 
 	var processDir = exports.process = function(dir){
+
 		//find files
 
 		dir = resolveDirectory(dir);
@@ -43,8 +44,9 @@ module.exports = function(config){
 		console.log('process directory {0}'.format(dir.blue));
 
 		processing.push(dir);
+		conversionPass(dir).then( checkFiles.bind(null,dir) );
 
-		checkFiles(dir);
+		
 		eventEmitter.once('allFilesFound',getMetadata);
 		eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
 		eventEmitter.once("gotMetadata",showInViewer);
@@ -77,6 +79,55 @@ module.exports = function(config){
 		});
 	}
 
+	var conversionPass = function(dir){
+		return new Promise(function(resolve,reject){
+			console.log("conversionPass {0}".format(dir));
+			hasFiles(dir,["*.png","*.mtl"],["*.jpg"]).then(function(files){
+				console.log(files.join(", ").blue);
+				var needsConverting = !!files[0] && !!files[1] && !files[2];
+				if( !needsConverting ){
+					resolve();
+					return;
+				}
+				var pngFile = files[0];
+				var mtlFile = files[1];
+				
+				var inputImage = {
+					path: pngFile
+				}
+
+				var outputImage = {
+					versions : [
+						{ format: 'jpg' }
+					]
+
+				}
+
+				resize( inputImage, outputImage, function(err,versions){
+					if(err){
+						throw err;
+						return;
+					}
+					updateMtl( mtlFile, path.basename(pngFile), path.basename(versions[0].path), resolve);
+				});
+				
+			},resolve);
+			
+		});
+	}
+
+	var updateMtl = function(mtlFile, currentImage, replacementImage, callback){
+		fs.readFile(mtlFile,'utf8',function(err,contents){
+			if(err) throw err;
+			contents = contents.replace(currentImage,replacementImage);
+			fs.writeFile(mtlFile,contents,function(err){
+				if(err) throw err;
+				console.log("mtl file updated");
+				callback();
+			});
+		});
+	}
+
 	var cancelProcessDir = function(){
 		eventEmitter.removeAllListeners('allFilesFound');
 		eventEmitter.removeAllListeners('gotMetadata');
@@ -98,15 +149,20 @@ module.exports = function(config){
 		});
 	}
 
-	var hasFiles = function(dir,files){
-		files = files.map(function(file){ return path.join(dir,file); })
+	var hasFiles = function(dir,files,exceptFiles){
+
+		files = files.map(function(file){ return path.join(dir,file); });
+		exceptFiles = exceptFiles.map(function(file){ return path.join(dir,file); });
+		files = files.concat( exceptFiles );
 		var globs = files.map(function(file){  
 
 			return new Promise( function(resolve,reject){
 				glob(file, function(err, files){
 					if(err) throw err;
-					else if( files.length==0 ) reject(file);
-					else resolve(files[0]);
+					var isExcept = file.indexOf(exceptFiles) >= 0;
+					var hasFile = files.length!==0;
+					if( !!(hasFile ^ isExcept) ) resolve(files[0]);
+					else reject(file);
 				});
 			});
 		});
@@ -155,7 +211,11 @@ module.exports = function(config){
 		var args = files.concat();
 
 		args.pop();
+
+		console.log(("files to zip "+args.join(", ")).red);
+
 		args.unshift(zipFilename);
+
 
 		metadata.zipFilename = zipFilename;
 		
