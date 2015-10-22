@@ -136,18 +136,27 @@ module.exports = function(config){
 	}
 
 	var checkFiles = function(dir){
-		
+		console.log("checkFiles");
+
 		hasFiles(dir,["*.obj","*.jpg","*.mtl","*.json"]).then(function(results){
 			console.log( results );
 			eventEmitter.emit("allFilesFound",dir,results);
 		},function(reason){
 			console.log( "failed" );
 			console.log(reason+" not found");
+			processingComplete(dir);
 		}).catch(function(err){
 			console.log(err.stack);
+			processingComplete(dir);
 			//console.trace();
 			//throw err;
 		});
+	}
+
+	var processingComplete = function(dir){
+		var i = processing.indexOf(dir);
+		if( i === -1 ) return;
+		processing.splice(i,1);
 	}
 
 	var hasFiles = function(dir,files,exceptFiles){
@@ -277,6 +286,8 @@ module.exports = function(config){
 
 	var onComplete = function(metadata){
 		eventEmitter.emit('onComplete',metadata);
+		processingComplete(metadata.srcpath);
+
 	}
 
 	var loadLogFile = function(){
