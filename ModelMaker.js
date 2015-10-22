@@ -207,7 +207,7 @@ module.exports = function(config){
 
 	var uploadComplete = function(metadata,url){
 
-		metadata.url = url;
+		metadata.url = url + "?preload=1";
 		//distpatch upload complete event
 		eventEmitter.emit('uploadComplete',metadata);
 
@@ -320,7 +320,7 @@ module.exports = function(config){
 		}
 
 		if(!fs.statSync(resolvedDir).isDirectory()){
-			eventEmitter.emit("fileFail","path {0} given was not a directory",format(dir));						
+			eventEmitter.emit("fileFail","path {0} given was not a directory".format(dir));						
 		}
 
 		if(resolvedDir.charAt(resolvedDir.length-1)=="/"){
