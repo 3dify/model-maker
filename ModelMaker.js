@@ -69,6 +69,7 @@ module.exports = function(config){
 		watch.watchTree(dir, function(f, curr, prev){
 			if( curr && prev === null ){
 				var ldir = path.dirname(f);
+				if(ldir[0]===".") return;
 				if(ldir!=dir){
 					processDir(ldir);
 				}

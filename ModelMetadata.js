@@ -27,11 +27,13 @@ module.exports = function(config){
 				//console.log('change to {0}'.format(f));
 				if( curr && prev === null ){
 					var ldir = path.dirname(f);
+					if(ldir[0]==='.') return;
 					if(ldir==dir){
 						checkDir(f);
 					}
 				}
 				if( prev && curr && curr.dev===0 ){
+					if(ldir[0]===".") return;
 					var ldir = path.dirname(f);
 					if(ldir==dir){
 						deletedDir(f);
