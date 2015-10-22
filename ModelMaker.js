@@ -274,8 +274,9 @@ module.exports = function(config){
 				console.log("Uploading to Sketchfab {0}% Complete".format(Math.round(p)));
 			});
 			result.on('error',function(error){
-				console.error(error);
-				process.exit(1);
+				console.error(error.toString().red);
+				//process.exit(1);
+				onComplete();
 			});
 
 		});
