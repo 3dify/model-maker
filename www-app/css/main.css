@@ -94,11 +94,24 @@ textarea#description {
 	background-image: url('/img/note.png');	
 }
 
-div#index {
+#reald-button, #vue-button {
+	font-size: 2em;
+	color: #66CCFF;
+	text-decoration: none;
+}
+
+#reald-button:visited, #vue-button:visited {
+	color: #66CCFF;
+}
+
+
+div#index, .privacy-policy {
 	position:fixed;
 	display:block;
 	width:100vw;
 	height:100vh;
+	top:0;
+	left:0;
 	z-index:100;
 	background-color: #FFF;
 	margin:0;
@@ -153,5 +166,20 @@ index-entry .dir {
 	width:100px;
 	height:100%;
 }
+
+.privacy-policy {
+	padding:0px 20px;
+	-webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+	-moz-box-sizing: border-box;    /* Firefox, other Gecko */
+	box-sizing: border-box; 
+}
+
+.privacy-policy button {
+	font-size: 22px;
+	float:right;
+	margin:25px 5px;
+	padding:10px 20px;
+}
+
 
 

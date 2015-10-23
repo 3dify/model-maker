@@ -9,7 +9,7 @@ var glob = require("glob");
 var resize = require('im-resize');
 
 var EmailNotifications = require('./EmailNotifications');
-var SketchFab = require('node-sketchfab');
+var SketchFab = require('sketchfab');
 
 module.exports = function(config){
 

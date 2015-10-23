@@ -137,6 +137,24 @@ $(function(){
 		activateFullscreen();
 	});
 	*/
+	$('#reald-button').on('click',function(event){
+		event.preventDefault();
+		$('#reald-privacy-policy').slideDown();
+	});
+
+	$('#vue-button').on('click',function(event){
+		event.preventDefault();
+		$('#vue-privacy-policy').slideDown();
+	});
+
+	$('.reald-close').on('click',function(){
+		$('#reald-privacy-policy').slideUp();
+	});
+
+	$('.vue-close').on('click',function(){
+		$('#vue-privacy-policy').slideUp();
+	});
+
 
 	getListing();
 	setInterval(getListing,5000);
