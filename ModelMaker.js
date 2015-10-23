@@ -292,15 +292,13 @@ module.exports = function(config){
 		//distpatch upload complete event
 		eventEmitter.emit('uploadComplete',metadata);
 
-		cancelProcessDir();
-
 		console.log("url created: {0}".format(url));
 	}
 
 	var onComplete = function(metadata){
 		eventEmitter.emit('onComplete',metadata);
+		cancelProcessDir();
 		processingComplete(metadata.srcpath);
-
 	}
 
 	var loadLogFile = function(){
