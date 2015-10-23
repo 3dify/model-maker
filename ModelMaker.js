@@ -262,7 +262,7 @@ module.exports = function(config){
 	}
 
 	var uploadToSketchfab = function(metadata){
-		console.log("uploading to sketchfab {0}",metadata.zipFilename);
+		console.log("uploading to sketchfab: {0}".format(metadata.zipFilename));
 		sketchfab.upload({
 			file: metadata.zipFilename,
 			name: metadata["scan-name"] || "",
