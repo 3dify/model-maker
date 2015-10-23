@@ -109,7 +109,9 @@ module.exports = function(config){
 
 				resize( inputImage, outputImage, function(err,versions){
 					if(err){
-						throw err;
+						console.error("Convertion failed. Issue with png".red);
+						console.error( err );
+						resolve();
 						return;
 					}
 					updateMtl( mtlFile, path.basename(pngFile), path.basename(versions[0].path), resolve);
