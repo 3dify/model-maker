@@ -265,7 +265,7 @@ module.exports = function(config){
 		
 		sketchfab.upload({
 			file: metadata.zipFilename,
-			name: metadata["scan name"] || "",
+			name: metadata["scan-name"] || "",
 			description: metadata["description"] || "",
 			tags: config.tags || ""
 		},function(err,result){
