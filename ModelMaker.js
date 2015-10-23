@@ -300,7 +300,7 @@ module.exports = function(config){
 	var onComplete = function(metadata){
 		eventEmitter.emit('onComplete',metadata);
 		cancelProcessDir();
-		processingComplete(metadata.srcpath);
+		if( metadata ) processingComplete(metadata.srcpath);
 	}
 
 	var loadLogFile = function(){
