@@ -49,7 +49,6 @@ module.exports = function(config){
 
 		processing.push(dir);
 		conversionPass(dir).then( checkFiles.bind(null,dir) );
-
 		
 		eventEmitter.once('allFilesFound',getMetadata);
 		eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
@@ -137,6 +136,9 @@ module.exports = function(config){
 		eventEmitter.removeAllListeners('allFilesFound');
 		eventEmitter.removeAllListeners('gotMetadata');
 		eventEmitter.removeAllListeners('zipComplete');
+		eventEmitter.removeAllListeners('allFilesFound');
+		eventEmitter.removeAllListeners('zipComplete');
+		eventEmitter.removeAllListeners("uploadComplete");
 	}
 
 	var checkFiles = function(dir){
@@ -287,6 +289,8 @@ module.exports = function(config){
 		metadata.url = url + "?preload=1";
 		//distpatch upload complete event
 		eventEmitter.emit('uploadComplete',metadata);
+
+		cancelProcessDir();
 
 		console.log("url created: {0}".format(url));
 	}
