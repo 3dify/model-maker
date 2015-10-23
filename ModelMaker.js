@@ -369,6 +369,7 @@ module.exports = function(config){
 		emailNotification = new EmailNotifications(config);
 
 		eventEmitter.on('onComplete',function(metadata){
+			if(!metadata) return;
 			console.log('attempting to send email');
 			if( metadata['email'] ) emailNotification.sendEmail(
 				metadata['email'],
