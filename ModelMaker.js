@@ -37,7 +37,9 @@ module.exports = function(config){
 			setBasePath( path.dirname(dir) );
 		}
 
-		if( processed.indexOf(path.dirname(dir)) >= 0 ){
+		console.log('comparing '+dir+' to');
+		console.log( '    '+processed.join('\n    ') );
+		if( processed.indexOf(dir) >= 0 ){
 			return;
 		}
 
@@ -109,16 +111,18 @@ module.exports = function(config){
 					]
 
 				}
+				setTimeout(function(){
+					resize( inputImage, outputImage, function(err,versions){
+						if(err){
+							console.error("Convertion failed. Issue with png".red);
+							console.error( err );
+							resolve();
+							return;
+						}
+						updateMtl( mtlFile, path.basename(pngFile), path.basename(versions[0].path), resolve);
+					});
 
-				resize( inputImage, outputImage, function(err,versions){
-					if(err){
-						console.error("Convertion failed. Issue with png".red);
-						console.error( err );
-						resolve();
-						return;
-					}
-					updateMtl( mtlFile, path.basename(pngFile), path.basename(versions[0].path), resolve);
-				});
+				},2000);
 				
 			},resolve);
 			
@@ -343,7 +347,7 @@ module.exports = function(config){
 		processed = processed.concat( logEntries.map(function(logEntry){ 
 			return logEntry.split(',')[0].trim(); 
 		}).filter(function(dirname){
-			return dirname[0]!=='#' && dirname.length>1;
+			return dirname.length>0 && dirname[0]!=='#';
 		}).map(function(dirname){
 			return path.join(basePath,dirname);
 		}));
