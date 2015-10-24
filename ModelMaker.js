@@ -48,7 +48,7 @@ module.exports = function(config){
 		console.log('process directory {0}'.format(dir.blue));
 
 		processing.push(dir);
-		
+
 		setTimeout(function(){
 			conversionPass(dir).then( checkFiles.bind(null,dir) );
 		},1000);
@@ -409,7 +409,7 @@ module.exports = function(config){
 			metadata['email'],
 			metadata
 		);
-		else conso0le.log("no email provided".red);
+		else console.log("no email provided".red);
 	}
 
 	exports.enablePrint = function(){
