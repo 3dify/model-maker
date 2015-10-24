@@ -50,16 +50,16 @@ module.exports = function(config){
 		processing.push(dir);
 		conversionPass(dir).then( checkFiles.bind(null,dir) );
 		
-		eventEmitter.once('allFilesFound',getMetadata);
-		eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
-		eventEmitter.once("gotMetadata",showInViewer);
+		//eventEmitter.once('allFilesFound',getMetadata);
+		//eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
+		//eventEmitter.once("gotMetadata",showInViewer);
 		if( config.uploadToSketchfab ){
-			eventEmitter.once('zipComplete',uploadToSketchfab);
-			eventEmitter.once("uploadComplete",writeLogFile);			
-			eventEmitter.once("uploadComplete",onComplete);
+			//eventEmitter.once('zipComplete',uploadToSketchfab);
+			//eventEmitter.once("uploadComplete",writeLogFile);			
+			//eventEmitter.once("uploadComplete",onComplete);
 		}
 		else {
-			eventEmitter.once('zipComplete',onComplete);
+			//eventEmitter.once('zipComplete',onComplete);
 		}
 
 	}
@@ -135,12 +135,10 @@ module.exports = function(config){
 	}
 
 	var cancelProcessDir = function(){
-		eventEmitter.removeAllListeners('allFilesFound');
-		eventEmitter.removeAllListeners('gotMetadata');
-		eventEmitter.removeAllListeners('zipComplete');
-		eventEmitter.removeAllListeners('allFilesFound');
-		eventEmitter.removeAllListeners('zipComplete');
-		eventEmitter.removeAllListeners("uploadComplete");
+		//eventEmitter.removeAllListeners('allFilesFound');
+		//eventEmitter.removeAllListeners('gotMetadata');
+		//eventEmitter.removeAllListeners('zipComplete');
+		//eventEmitter.removeAllListeners("uploadComplete");
 	}
 
 	var checkFiles = function(dir){
@@ -148,7 +146,8 @@ module.exports = function(config){
 
 		hasFiles(dir,["*.obj","*.jpg","*.mtl","*.json"]).then(function(results){
 			console.log( results );
-			eventEmitter.emit("allFilesFound",dir,results);
+			//eventEmitter.emit("allFilesFound",dir,results);
+			getMetadata(dir,results);
 		},function(reason){
 			console.log( "failed" );
 			console.log(reason+" not found");
@@ -205,7 +204,8 @@ module.exports = function(config){
 			}
 
 			metadata.srcpath = dir;
-			eventEmitter.emit("gotMetadata", files, metadata);
+			//eventEmitter.emit("gotMetadata", files, metadata);
+			makeZip(dir,files,metadata);
 		});
 	}
 
@@ -257,8 +257,13 @@ module.exports = function(config){
 
 		console.log("Creating zip");
 		console.log(stdout);
-		eventEmitter.emit('zipComplete',metadata);
-
+		//eventEmitter.emit('zipComplete',metadata);
+		if( config.uploadToSketchfab ){
+			uploadToSketchfab(metadata);
+		}
+		else {
+			onComplete(metadata);
+		}
 	}
 
 	var uploadToSketchfab = function(metadata){
@@ -292,13 +297,27 @@ module.exports = function(config){
 
 		metadata.url = url + "?preload=1";
 		//distpatch upload complete event
-		eventEmitter.emit('uploadComplete',metadata);
+		//eventEmitter.emit('uploadComplete',metadata);
+		if( config.uploadToSketchfab ){
+			//eventEmitter.once('zipComplete',uploadToSketchfab);
+			writeLogFile(metadata);
+			onComplete(metadata);
+		}
+		else {
+			//eventEmitter.once('zipComplete',onComplete);
+			onComplete(metadata);
+		}
 
 		console.log("url created: {0}".format(url));
 	}
 
 	var onComplete = function(metadata){
-		eventEmitter.emit('onComplete',metadata);
+		//eventEmitter.emit('onComplete',metadata);
+		
+		if( emailNotification ){
+			sendEmail(metadata);
+		}
+
 		cancelProcessDir();
 		if( metadata ) processingComplete(metadata.srcpath);
 	}
@@ -340,7 +359,7 @@ module.exports = function(config){
 		if( logFilePath ) fs.stat(logFilePath,function(err,stats){
 
 			if(stats && stats.isDirectory()){
-				eventEmitter("fileFail",new Error("config.log file {0} was a directroy".format(config.log)));
+				eventEmitter.emit("fileFail",new Error("config.log file {0} was a directroy".format(config.log)));
 				return;
 			}
 
@@ -370,15 +389,19 @@ module.exports = function(config){
 
 		emailNotification = new EmailNotifications(config);
 
-		eventEmitter.on('onComplete',function(metadata){
-			if(!metadata) return;
-			console.log('attempting to send email');
-			if( metadata['email'] ) emailNotification.sendEmail(
-				metadata['email'],
-				metadata
-			);
-			else conso0le.log("no email provided".red);
-		});
+		/*
+		eventEmitter.on('onComplete',sendEmail);
+		*/
+	}
+
+	var sendEmail = function(metadata){
+		if(!metadata) return;
+		console.log('attempting to send email');
+		if( metadata['email'] ) emailNotification.sendEmail(
+			metadata['email'],
+			metadata
+		);
+		else conso0le.log("no email provided".red);
 	}
 
 	exports.enablePrint = function(){
