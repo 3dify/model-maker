@@ -45,7 +45,7 @@ module.exports = function(config){
 		}
 
 		if( processing.indexOf(dir) >= 0 ){
-			console.log("dir already processed".yellow);
+			console.log("dir being processed".yellow);
 			return;
 		}
 
@@ -287,7 +287,7 @@ module.exports = function(config){
 			if(err){
 				console.error(err);
 				//process.exit(1);
-				onComplete();
+				onComplete(metadata);
 				return;
 			}
 			result.on('success',uploadComplete.bind(null,metadata));
