@@ -37,13 +37,15 @@ module.exports = function(config){
 			setBasePath( path.dirname(dir) );
 		}
 
-		console.log('comparing '+dir+' to');
-		console.log( '    '+processed.join('\n    ') );
+		console.log('checking directory {0}'.format(dir.blue));
+
 		if( processed.indexOf(dir) >= 0 ){
+			console.log("dir already processed".yellow);
 			return;
 		}
 
 		if( processing.indexOf(dir) >= 0 ){
+			console.log("dir already processed".yellow);
 			return;
 		}
 
