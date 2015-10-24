@@ -1,6 +1,6 @@
 module.exports = {
 	privateConfig : './.config.js',
-	tags : "sometag anothertag",
+	tags : "mcmcomiccon2015 mcmcomiccon comiccon",
 	log : "record.csv",
 	metadata : "metadata.json",
 	webroot: 'www-app',
