@@ -193,7 +193,6 @@ module.exports = function(config){
 	var getMetadata = function(dir,files){
 		fs.readFile(files[3],'utf8',function(err, data){
 			if(err){
-				cancelProcessDir();
 				eventEmitter.emit('fileFail',err);
 			}
 			try{
@@ -252,14 +251,16 @@ module.exports = function(config){
 	var zipComplete = function(metadata, error, stdout, stderr){
 		if(error){
 			console.error(error);
-			process.exit(1);
+			//process.exit(1);
+			onFail(metadata);
 		}
 
 		console.log("Creating zip");
 		console.log(stdout);
 		//eventEmitter.emit('zipComplete',metadata);
 		if( config.uploadToSketchfab ){
-			uploadToSketchfab(metadata);
+			setTimeout(uploadToSketchfab.bind(null,metadata),1000);
+			//uploadToSketchfab(metadata);
 		}
 		else {
 			onComplete(metadata);
@@ -319,6 +320,10 @@ module.exports = function(config){
 		}
 
 		cancelProcessDir();
+		if( metadata ) processingComplete(metadata.srcpath);
+	}
+
+	var onFail = function(metadata){
 		if( metadata ) processingComplete(metadata.srcpath);
 	}
 
