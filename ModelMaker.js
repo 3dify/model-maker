@@ -48,7 +48,10 @@ module.exports = function(config){
 		console.log('process directory {0}'.format(dir.blue));
 
 		processing.push(dir);
-		conversionPass(dir).then( checkFiles.bind(null,dir) );
+		
+		setTimeout(function(){
+			conversionPass(dir).then( checkFiles.bind(null,dir) );
+		},1000);
 		
 		//eventEmitter.once('allFilesFound',getMetadata);
 		//eventEmitter.once('gotMetadata',makeZip.bind(null,dir));
